@@ -1,5 +1,6 @@
 const CACHE = "mi-dia-v1";
-const FILES = ["/", "/index.html", "/manifest.json", "/icon.svg", "/config.js"];
+const BASE  = "/Pacho-project-";
+const FILES = [BASE + "/", BASE + "/index.html", BASE + "/manifest.json", BASE + "/icon.svg"];
 
 self.addEventListener("install", e =>
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)))
