@@ -397,15 +397,26 @@ window.unmark = async function(id) {
 function speak(text) {
   if (!window.speechSynthesis) return;
   window.speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang  = "es-ES";
-u.rate  = 0.82;
-u.pitch = 1.1;
-const voices = window.speechSynthesis.getVoices();
-const voz = voices.find(v => v.lang.startsWith("es") &&
-  (v.name.includes("Mónica") || v.name.includes("Monica") ||
-   v.name.includes("Paulina") || v.name.includes("Luciana")));
-if (voz) u.voice = voz;
+
+  setTimeout(() => {
+    const u   = new SpeechSynthesisUtterance(text);
+    u.lang    = "es-ES";
+    u.rate    = 0.82;
+    u.pitch   = 1.05;
+
+    const voices = window.speechSynthesis.getVoices();
+    if (voices.length > 0) {
+      const voz = voices.find(v => v.lang.startsWith("es"));
+      if (voz) u.voice = voz;
+      window.speechSynthesis.speak(u);
+    } else {
+      window.speechSynthesis.onvoiceschanged = () => {
+        const voz = window.speechSynthesis.getVoices().find(v => v.lang.startsWith("es"));
+        if (voz) u.voice = voz;
+        window.speechSynthesis.speak(u);
+      };
+    }
+  }, 150);
 }
 
 window.speakStatus = () => {
