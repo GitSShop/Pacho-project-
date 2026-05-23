@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Mi Día">
+  <meta name="theme-color" content="#0EA5E9">
+  <title>Mi Día</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" id="apple-icon" href="icon.svg">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html { height: 100%; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, sans-serif; background: #F8FAFC; min-height: 100%; color: #1E293B; }
+
+    /* ── SETUP ── */
+    #setup-view { max-width: 420px; margin: 0 auto; padding: 3rem 1.5rem; text-align: center; }
+    #setup-view .big-icon { font-size: 64px; margin-bottom: 1.25rem; }
+    #setup-view h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+    #setup-view .subtitle { font-size: 15px; color: #64748B; margin-bottom: 2.5rem; }
+    .field-label { display: block; text-align: left; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 6px; letter-spacing: 0.02em; text-transform: uppercase; }
+    .field-hint  { font-size: 12px; color: #94A3B8; margin-top: -0.75rem; margin-bottom: 1.25rem; text-align: left; line-height: 1.5; }
+    input[type="text"] { width: 100%; padding: 13px 16px; font-size: 16px; font-family: inherit; border: 2px solid #E2E8F0; border-radius: 12px; outline: none; background: white; margin-bottom: 1.25rem; transition: border-color 0.2s; }
+    input[type="text"]:focus { border-color: #0EA5E9; }
+    .btn-primary { width: 100%; padding: 15px; font-size: 16px; font-weight: 700; font-family: inherit; background: #0EA5E9; color: white; border: none; border-radius: 12px; cursor: pointer; transition: background 0.15s; }
+    .btn-primary:active { background: #0284C7; }
+
+    /* ── LAYOUT ── */
+    #app-view { display: none; max-width: 500px; margin: 0 auto; padding: 1.25rem 1rem; }
+    .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid #E2E8F0; gap: 10px; }
+    .avatar { width: 42px; height: 42px; border-radius: 50%; background: #E0F2FE; display: flex; align-items: center; justify-content: center; font-size: 19px; font-weight: 700; color: #0284C7; flex-shrink: 0; }
+    .tab-bar { display: flex; gap: 6px; flex-shrink: 0; }
+    .tab-btn { font-size: 12px; font-family: inherit; padding: 7px 12px; border-radius: 8px; border: 1px solid #E2E8F0; background: transparent; cursor: pointer; color: #64748B; font-weight: 500; transition: all 0.15s; white-space: nowrap; }
+    .tab-btn.active { background: #EFF6FF; color: #1D4ED8; border-color: #BFDBFE; font-weight: 600; }
+
+    /* ── FAMILY STATS ── */
+    .stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 1.5rem; }
+    .stat-card { background: white; border: 1px solid #E2E8F0; border-radius: 12px; padding: 1rem; }
+    .stat-card.danger { background: #FEF2F2; border-color: #FECACA; }
+    .stat-label { font-size: 12px; color: #64748B; margin-bottom: 4px; }
+    .stat-card.danger .stat-label { color: #DC2626; }
+    .stat-value { font-size: 22px; font-weight: 700; color: #1E293B; }
+    .stat-card.danger .stat-value { color: #DC2626; }
+    .progress-bar { height: 4px; background: #E2E8F0; border-radius: 2px; margin-top: 8px; overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 2px; transition: width 0.5s ease; }
+
+    /* ── ALERT BOX ── */
+    .alert-box { background: #FEF2F2; border: 1px solid #FECACA; border-radius: 12px; padding: 1rem 1.1rem; margin-bottom: 1.25rem; }
+    .alert-title { font-size: 14px; font-weight: 600; color: #DC2626; margin-bottom: 8px; }
+    .alert-item { font-size: 13px; color: #DC2626; display: flex; align-items: center; gap: 7px; margin-top: 5px; }
+
+    /* ── ROUTINE LIST ── */
+    .routine-list { display: flex; flex-direction: column; gap: 8px; }
+    .routine-item { display: flex; align-items: center; gap: 12px; padding: 0.85rem 1rem; background: white; border: 1px solid #E2E8F0; border-radius: 10px; transition: border-color 0.2s; }
+    .routine-item.done { border-color: #86EFAC; }
+    .routine-item.late { border-color: #FCA5A5; }
+    .routine-icon { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 19px; flex-shrink: 0; background: #F1F5F9; }
+    .routine-icon.done { background: #DCFCE7; }
+    .routine-icon.late { background: #FEE2E2; }
+    .routine-name { font-size: 14px; font-weight: 500; }
+    .routine-name.done { color: #94A3B8; text-decoration: line-through; font-weight: 400; }
+    .routine-time { font-size: 12px; color: #94A3B8; margin-top: 2px; }
+    .cat-badge { font-size: 11px; font-weight: 500; padding: 3px 8px; border-radius: 6px; white-space: nowrap; }
+    .unmark-btn { font-size: 11px; font-family: inherit; padding: 3px 7px; color: #94A3B8; background: none; border: 1px solid #E2E8F0; border-radius: 5px; cursor: pointer; }
+    .info-box { margin-top: 1.5rem; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 0.85rem 1rem; font-size: 13px; color: #64748B; display: flex; gap: 8px; line-height: 1.5; }
+
+    /* ── SYNC STATUS ── */
+    .sync-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
+    .sync-dot.ok { background: #22C55E; }
+    .sync-dot.warn { background: #F59E0B; }
+
+    /* ── PATIENT VIEW ── */
+    #patient-view { display: none; }
+    .patient-wrap { max-width: 370px; margin: 0 auto; }
+    .patient-card { background: white; border: 1px solid #E2E8F0; border-radius: 24px; padding: 1.5rem 1.25rem; box-shadow: 0 4px 14px rgba(0,0,0,0.06); }
+    .patient-topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+    .patient-date { font-size: 12px; color: #94A3B8; }
+    .speak-btn { display: flex; align-items: center; gap: 7px; font-size: 14px; font-weight: 600; font-family: inherit; padding: 9px 16px; background: #EFF6FF; color: #2563EB; border: none; border-radius: 20px; cursor: pointer; transition: background 0.15s; }
+    .speak-btn:active { background: #DBEAFE; transform: scale(0.97); }
+    .patient-greeting { text-align: center; margin: 1rem 0 1.5rem; }
+    .patient-emoji { font-size: 54px; line-height: 1; margin-bottom: 10px; }
+    .patient-name-text { font-size: 24px; font-weight: 700; }
+    .patient-sub { font-size: 15px; color: #64748B; margin-top: 6px; }
+    .activity-btn { display: flex; align-items: center; gap: 16px; padding: 1.1rem 1.2rem; font-size: 17px; font-weight: 600; font-family: inherit; background: white; border: 2px solid #E2E8F0; border-radius: 16px; width: 100%; text-align: left; cursor: pointer; transition: all 0.2s; color: #1E293B; margin-bottom: 10px; }
+    .activity-btn:active { transform: scale(0.97); background: #F0FDF4; border-color: #86EFAC; }
+    .activity-btn.confirmed { background: #F0FDF4; border-color: #86EFAC; }
+    .activity-emoji { font-size: 32px; flex-shrink: 0; }
+    .done-section { margin-top: 1.25rem; border-top: 1px solid #E2E8F0; padding-top: 1rem; }
+    .done-section-label { font-size: 13px; color: #94A3B8; text-align: center; margin-bottom: 8px; }
+    .done-row { display: flex; align-items: center; gap: 10px; padding: 0.5rem 0; }
+    .all-done { text-align: center; padding: 1.5rem 1rem; }
+    .all-done-title { font-size: 20px; font-weight: 700; color: #16A34A; margin-top: 8px; }
+    .all-done-sub { font-size: 15px; color: #64748B; margin-top: 6px; line-height: 1.5; }
+    .patient-footer { text-align: center; margin-top: 0.75rem; font-size: 12px; color: #94A3B8; }
+    .back-btn { background: none; border: none; font-family: inherit; font-size: 12px; color: #94A3B8; cursor: pointer; margin-top: 4px; }
+
+    /* ── UTILS ── */
+    .hidden { display: none !important; }
+    @media (max-width: 380px) {
+      .tab-btn { padding: 6px 9px; font-size: 11px; }
+      .patient-name-text { font-size: 20px; }
+      .activity-btn { font-size: 16px; padding: 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════
+     SETUP - Primera vez
+══════════════════════════════════════ -->
+<div id="setup-view">
+  <div class="big-icon">💙</div>
+  <h1>Hola, bienvenido</h1>
+  <p class="subtitle">Vamos a configurar la app<br>para tu familia</p>
+
+  <label class="field-label">Nombre de la persona</label>
+  <input type="text" id="setup-name" placeholder="Ej: Pacho" value="Pacho" autocomplete="off">
+
+  <label class="field-label">Código de familia</label>
+  <input type="text" id="setup-code" placeholder="Ej: familia-garcia" autocomplete="off">
+  <p class="field-hint">Anota este código — lo necesitas para ver el panel desde otros celulares.</p>
+
+  <button class="btn-primary" onclick="saveSetup()">Empezar →</button>
+</div>
+
+<!-- ══════════════════════════════════════
+     APP PRINCIPAL
+══════════════════════════════════════ -->
+<div id="app-view">
+
+  <!-- Header compartido -->
+  <div class="header">
+    <div style="display:flex;align-items:center;gap:10px;min-width:0">
+      <div class="avatar" id="hdr-initial">P</div>
+      <div style="min-width:0">
+        <div style="font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="hdr-name">Pacho</div>
+        <div style="font-size:11px;color:#94A3B8" id="hdr-lastseen">Sin actividad hoy</div>
+      </div>
+    </div>
+    <div class="tab-bar">
+      <button class="tab-btn active" id="tab-family" onclick="switchView('family')">🏠 Familia</button>
+      <button class="tab-btn"        id="tab-patient" onclick="switchView('patient')">📱 Pacho</button>
+    </div>
+  </div>
+
+  <!-- ── PANEL FAMILIAR ── -->
+  <div id="family-view">
+    <div class="stats">
+      <div class="stat-card">
+        <div class="stat-label">Progreso</div>
+        <div class="stat-value" id="s-pct">0%</div>
+        <div class="progress-bar"><div class="progress-fill" id="s-bar" style="width:0%;background:#16A34A"></div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Completadas</div>
+        <div class="stat-value" id="s-done" style="color:#16A34A">0/8</div>
+      </div>
+      <div class="stat-card" id="s-alert-card">
+        <div class="stat-label" id="s-alert-label">Alertas</div>
+        <div class="stat-value" id="s-alert">0</div>
+      </div>
+    </div>
+
+    <div class="alert-box hidden" id="alert-box">
+      <div class="alert-title">⚠️ <span id="alert-name">Pacho</span> no realizó estas actividades a tiempo</div>
+      <div id="alert-items"></div>
+    </div>
+
+    <div class="routine-list" id="routine-list"></div>
+
+    <div class="info-box">
+      <span>🔊</span>
+      <span id="info-text">La app le habla a Pacho en español. Cambia a su vista para ver cómo él la usa.</span>
+    </div>
+
+    <div style="margin-top:1rem;font-size:11px;color:#94A3B8;text-align:right">
+      <span class="sync-dot ok" id="sync-dot"></span>
+      <span id="sync-label">Sincronizado</span>
+    </div>
+  </div>
+
+  <!-- ── VISTA DE PACHO ── -->
+  <div id="patient-view">
+    <div class="patient-wrap">
+      <div class="patient-card">
+        <div class="patient-topbar">
+          <span class="patient-date" id="p-date"></span>
+          <button class="speak-btn" onclick="speakStatus()">🔊 Escuchar</button>
+        </div>
+
+        <div class="patient-greeting">
+          <div class="patient-emoji" id="p-emoji">🌤️</div>
+          <div class="patient-name-text" id="p-greeting">Buenos días, Pacho</div>
+          <div class="patient-sub" id="p-sub">Toca lo que ya hiciste hoy</div>
+        </div>
+
+        <div id="activity-btns"></div>
+        <div id="done-section" class="done-section hidden">
+          <div class="done-section-label">Ya hice esto hoy ✓</div>
+          <div id="done-list"></div>
+        </div>
+      </div>
+
+      <div class="patient-footer">Tu familia ve esto al instante 💙</div>
+      <div style="text-align:center;margin-top:4px">
+        <button class="back-btn" onclick="switchView('family')">← Panel familiar</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /app-view -->
+
+<!-- ══════════════════════════════════════
+     FIREBASE SDK
+══════════════════════════════════════ -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="config.js"></script>
+
+<script>
+// ════════════════════════════════════════
+//  DATOS DE RUTINAS
+// ════════════════════════════════════════
+const ROUTINES = [
+  { id:"dental_m",  name:"Cepillarse los dientes",  expectedBy:9,  cat:"higiene", emoji:"🦷", voz:"cepillarse los dientes" },
+  { id:"ducha",     name:"Baño o ducha",             expectedBy:11, cat:"higiene", emoji:"🚿", voz:"bañarse" },
+  { id:"ropa",      name:"Cambio de ropa",           expectedBy:11, cat:"higiene", emoji:"👕", voz:"cambiarse de ropa" },
+  { id:"desayuno",  name:"Desayuno",                 expectedBy:10, cat:"comida",  emoji:"☕", voz:"desayunar" },
+  { id:"med_m",     name:"Pastilla de la mañana",    expectedBy:10, cat:"medico",  emoji:"💊", voz:"tomar la pastilla de la mañana" },
+  { id:"almuerzo",  name:"Almuerzo",                 expectedBy:14, cat:"comida",  emoji:"🍽️", voz:"almorzar" },
+  { id:"cena",      name:"Cena",                     expectedBy:21, cat:"comida",  emoji:"🌙", voz:"cenar" },
+  { id:"med_n",     name:"Pastilla de la noche",     expectedBy:21, cat:"medico",  emoji:"💊", voz:"tomar la pastilla de la noche" },
+];
+
+const CAT = {
+  higiene: { bg:"#EFF6FF", color:"#1D4ED8", label:"Higiene" },
+  comida:  { bg:"#F0FDF4", color:"#15803D", label:"Comida" },
+  medico:  { bg:"#FFFBEB", color:"#B45309", label:"Medicación" },
+};
+
+// ════════════════════════════════════════
+//  ESTADO
+// ════════════════════════════════════════
+const app = {
+  name: "Pacho",
+  code: "",
+  completions: {},
+  lastSeen: null,
+  view: "family",
+  db: null,
+  ref: null,
+  synced: false,
+};
+
+// ════════════════════════════════════════
+//  INICIO
+// ════════════════════════════════════════
+window.onload = () => {
+  const name = localStorage.getItem("mi_nombre");
+  const code = localStorage.getItem("mi_codigo");
+
+  // Pre-fill setup code
+  document.getElementById("setup-code").value =
+    "familia-" + Math.random().toString(36).substring(2, 9);
+
+  if (name && code) {
+    app.name = name;
+    app.code = code;
+    bootApp();
+  } else {
+    document.getElementById("setup-view").style.display = "block";
+  }
+};
+
+window.saveSetup = () => {
+  const name = (document.getElementById("setup-name").value || "Pacho").trim();
+  const code = (document.getElementById("setup-code").value || "").trim().toLowerCase().replace(/\s+/g,"-");
+  if (!code) { alert("Ingresa un código de familia"); return; }
+  localStorage.setItem("mi_nombre", name);
+  localStorage.setItem("mi_codigo", code);
+  app.name = name;
+  app.code = code;
+  document.getElementById("setup-view").style.display = "none";
+  bootApp();
+};
+
+function bootApp() {
+  document.getElementById("app-view").style.display = "block";
+  updateStaticLabels();
+  initFirebase();
+  setInterval(render, 60000);
+
+  // Set patient date
+  document.getElementById("p-date").textContent =
+    new Date().toLocaleDateString("es", { weekday:"long", day:"numeric", month:"long" });
+}
+
+// ════════════════════════════════════════
+//  FIREBASE
+// ════════════════════════════════════════
+function initFirebase() {
+  try {
+    if (!window.FIREBASE_CONFIG || window.FIREBASE_CONFIG.apiKey === "TU_API_KEY") {
+      // Firebase no configurado → modo local
+      setSyncStatus(false);
+      loadLocal();
+      render();
+      return;
+    }
+    firebase.initializeApp(window.FIREBASE_CONFIG);
+    app.db  = firebase.firestore();
+    app.ref = app.db.collection("families").doc(app.code);
+
+    app.ref.onSnapshot(doc => {
+      if (doc.exists) {
+        const d = doc.data();
+        app.completions = d[todayKey()] || {};
+        app.lastSeen    = d.lastSeen   || null;
+      }
+      setSyncStatus(true);
+      render();
+    }, () => {
+      setSyncStatus(false);
+      loadLocal();
+      render();
+    });
+  } catch(e) {
+    setSyncStatus(false);
+    loadLocal();
+    render();
+  }
+}
+
+function setSyncStatus(ok) {
+  app.synced = ok;
+  const dot   = document.getElementById("sync-dot");
+  const label = document.getElementById("sync-label");
+  if (dot)   { dot.className   = ok ? "sync-dot ok" : "sync-dot warn"; }
+  if (label) { label.textContent = ok ? "Sincronizado" : "Solo este dispositivo"; }
+}
+
+function loadLocal() {
+  const s = localStorage.getItem("comp_" + todayKey());
+  app.completions = s ? JSON.parse(s) : {};
+  const ls = localStorage.getItem("last_seen");
+  app.lastSeen = ls ? parseInt(ls) : null;
+}
+
+async function saveToFirebase() {
+  if (!app.ref) {
+    localStorage.setItem("comp_" + todayKey(), JSON.stringify(app.completions));
+    localStorage.setItem("last_seen", String(app.lastSeen));
+    return;
+  }
+  const upd = { lastSeen: app.lastSeen, name: app.name };
+  upd[todayKey()] = app.completions;
+  try { await app.ref.set(upd, { merge: true }); } catch(e) {
+    localStorage.setItem("comp_" + todayKey(), JSON.stringify(app.completions));
+  }
+}
+
+// ════════════════════════════════════════
+//  ACCIONES
+// ════════════════════════════════════════
+window.markDone = async function(id) {
+  const btn = document.getElementById("btn-" + id);
+  if (btn) {
+    btn.classList.add("confirmed");
+    btn.querySelector(".activity-emoji").textContent = "✅";
+    btn.disabled = true;
+  }
+  app.completions[id] = Date.now();
+  app.lastSeen = Date.now();
+
+  const r         = ROUTINES.find(x => x.id === id);
+  const remaining = ROUTINES.filter(x => !app.completions[x.id]);
+  if (remaining.length === 0) {
+    speak(`¡Muy bien, ${app.name}! Completaste todo hoy. ¡Tu familia está muy orgullosa de ti!`);
+  } else {
+    speak(`¡Listo! ${r.voz} completado. ¡Bien hecho, ${app.name}!`);
+  }
+
+  setTimeout(render, 1400);
+  await saveToFirebase();
+};
+
+window.unmark = async function(id) {
+  delete app.completions[id];
+  render();
+  await saveToFirebase();
+};
+
+// ════════════════════════════════════════
+//  VOZ
+// ════════════════════════════════════════
+function speak(text) {
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang  = "es-ES";
+  u.rate  = 0.82;
+  u.pitch = 1.05;
+  window.speechSynthesis.speak(u);
+}
+
+window.speakStatus = () => {
+  const pending = ROUTINES.filter(r => !app.completions[r.id]);
+  const h   = new Date().getHours();
+  const sal = h < 12 ? "Buenos días" : h < 19 ? "Buenas tardes" : "Buenas noches";
+  if (pending.length === 0) {
+    speak(`${sal}, ${app.name}. Completaste todo hoy. ¡Excelente!`); return;
+  }
+  const lista = pending.slice(0,3).map(r => r.voz).join(", ");
+  const msg   = pending.length === 1
+    ? `${sal}, ${app.name}. Solo falta una cosa: ${pending[0].voz}. Toca el botón cuando lo hagas.`
+    : `${sal}, ${app.name}. Tienes ${pending.length} actividades pendientes: ${lista}. Toca cada botón cuando la hagas.`;
+  speak(msg);
+};
+
+// ════════════════════════════════════════
+//  RENDER
+// ════════════════════════════════════════
+function updateStaticLabels() {
+  document.getElementById("hdr-initial").textContent  = app.name[0].toUpperCase();
+  document.getElementById("hdr-name").textContent     = app.name;
+  document.getElementById("alert-name").textContent   = app.name;
+  document.getElementById("info-text").textContent    = `La app le habla a ${app.name} en español. Cambia a su vista para ver cómo él la usa.`;
+  document.getElementById("tab-patient").textContent  = "📱 " + app.name;
+}
+
+function render() {
+  const h      = new Date().getHours();
+  const done   = ROUTINES.filter(r =>  app.completions[r.id]);
+  const pending= ROUTINES.filter(r => !app.completions[r.id]);
+  const overdue= pending.filter(r => h > r.expectedBy);
+  const pct    = Math.round(done.length / ROUTINES.length * 100);
+  const barClr = pct >= 80 ? "#16A34A" : pct >= 40 ? "#D97706" : "#DC2626";
+
+  // ── Stats ──
+  document.getElementById("s-pct").textContent          = pct + "%";
+  document.getElementById("s-bar").style.width          = pct + "%";
+  document.getElementById("s-bar").style.background     = barClr;
+  document.getElementById("s-done").textContent         = done.length + "/" + ROUTINES.length;
+  document.getElementById("s-alert").textContent        = overdue.length;
+  const alertCard = document.getElementById("s-alert-card");
+  if (overdue.length > 0) {
+    alertCard.className = "stat-card danger";
+    document.getElementById("s-alert-label").textContent = "Alertas";
+  } else {
+    alertCard.className = "stat-card";
+    document.getElementById("s-alert-label").textContent = "Alertas";
+    document.getElementById("s-alert").style.color = "#1E293B";
+  }
+
+  // ── Alert box ──
+  const abox = document.getElementById("alert-box");
+  if (overdue.length > 0) {
+    abox.classList.remove("hidden");
+    document.getElementById("alert-items").innerHTML = overdue.map(r =>
+      `<div class="alert-item">${r.emoji} ${r.name} — esperada antes de las ${r.expectedBy}:00</div>`
+    ).join("");
+  } else { abox.classList.add("hidden"); }
+
+  // ── Last seen ──
+  const lsEl = document.getElementById("hdr-lastseen");
+  if (app.lastSeen) {
+    lsEl.textContent = "Última actividad: " + fmtTime(app.lastSeen);
+    lsEl.style.color = "#16A34A";
+  } else {
+    lsEl.textContent = "Sin actividad registrada hoy";
+    lsEl.style.color = "#94A3B8";
+  }
+
+  // ── Routine list ──
+  document.getElementById("routine-list").innerHTML = ROUTINES.map(r => {
+    const isDone = !!app.completions[r.id];
+    const isLate = !isDone && h > r.expectedBy;
+    const cat    = CAT[r.cat];
+    return `<div class="routine-item ${isDone?"done":""} ${isLate?"late":""}">
+      <div class="routine-icon ${isDone?"done":isLate?"late":""}">
+        ${isDone
+          ? `<svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3 9l4 4 8-8" stroke="#16A34A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+          : r.emoji}
+      </div>
+      <div style="flex:1;min-width:0">
+        <div class="routine-name ${isDone?"done":""}">${r.name}</div>
+        <div class="routine-time">${isDone ? "Confirmado a las " + fmtTime(app.completions[r.id]) : "Esperado antes de las " + r.expectedBy + ":00"}</div>
+      </div>
+      <span class="cat-badge" style="background:${cat.bg};color:${cat.color}">${cat.label}</span>
+      ${isDone ? `<button class="unmark-btn" onclick="unmark('${r.id}')">✕</button>` : ""}
+    </div>`;
+  }).join("");
+
+  // ── Patient view ──
+  const greeting = h < 12 ? "Buenos días" : h < 19 ? "Buenas tardes" : "Buenas noches";
+  document.getElementById("p-emoji").textContent   = pending.length === 0 ? "🎉" : h < 12 ? "🌤️" : h < 19 ? "☀️" : "🌙";
+  document.getElementById("p-greeting").textContent= `${greeting}, ${app.name}`;
+  document.getElementById("p-sub").textContent     = pending.length === 0
+    ? "¡Hiciste todo hoy!" : pending.length === 1 ? "Solo falta una cosa" : "Toca lo que ya hiciste";
+
+  const btnsEl = document.getElementById("activity-btns");
+  if (pending.length === 0) {
+    btnsEl.innerHTML = `<div class="all-done">
+      <div style="font-size:52px">🎉</div>
+      <div class="all-done-title">¡Muy bien, ${app.name}!</div>
+      <div class="all-done-sub">Hiciste todo hoy.<br>Tu familia está muy orgullosa de ti 💙</div>
+    </div>`;
+  } else {
+    btnsEl.innerHTML = pending.map(r =>
+      `<button class="activity-btn" id="btn-${r.id}" onclick="markDone('${r.id}')">
+        <span class="activity-emoji">${r.emoji}</span>
+        <span>${r.name}</span>
+      </button>`
+    ).join("");
+  }
+
+  if (done.length > 0) {
+    document.getElementById("done-section").classList.remove("hidden");
+    document.getElementById("done-list").innerHTML = done.map(r =>
+      `<div class="done-row">
+        <span style="font-size:20px">${r.emoji}</span>
+        <span style="font-size:14px;color:#64748B;flex:1">${r.name}</span>
+        <span style="font-size:13px;font-weight:600;color:#16A34A">${fmtTime(app.completions[r.id])}</span>
+      </div>`
+    ).join("");
+  } else {
+    document.getElementById("done-section").classList.add("hidden");
+  }
+}
+
+// ════════════════════════════════════════
+//  NAVEGACIÓN
+// ════════════════════════════════════════
+window.switchView = (v) => {
+  app.view = v;
+  document.getElementById("family-view").style.display  = v === "family" ? "block" : "none";
+  document.getElementById("patient-view").style.display = v === "patient" ? "block" : "none";
+  document.getElementById("tab-family").className  = "tab-btn" + (v==="family" ? " active" : "");
+  document.getElementById("tab-patient").className = "tab-btn" + (v==="patient"? " active" : "");
+};
+
+// ════════════════════════════════════════
+//  UTILIDADES
+// ════════════════════════════════════════
+function todayKey() {
+  return "d" + new Date().toISOString().split("T")[0].replace(/-/g,"");
+}
+function fmtTime(ts) {
+  if (!ts) return "";
+  return new Date(ts).toLocaleTimeString("es", { hour:"2-digit", minute:"2-digit" });
+}
+
+// Service Worker
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("sw.js").catch(() => {});
+}
+</script>
+</body>
+</html>
