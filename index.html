@@ -227,7 +227,7 @@ const ROUTINES = [
   { id:"ducha",     name:"Baño o ducha",             expectedBy:11, cat:"higiene", emoji:"🚿", voz:"bañarse" },
   { id:"ropa",      name:"Cambio de ropa",           expectedBy:11, cat:"higiene", emoji:"👕", voz:"cambiarse de ropa" },
   { id:"desayuno",  name:"Desayuno",                 expectedBy:10, cat:"comida",  emoji:"☕", voz:"desayunar" },
-  { id:"med_m",     name:"Tomar agua",    expectedBy:10, cat:"medico",  emoji:"💊", voz:"tomar agua" },
+  { id:"agua_m",    name:"Tomar agua",              expectedBy:10, cat:"comida",  emoji:"💧", voz:"tomar agua" },
   { id:"almuerzo",  name:"Almuerzo",                 expectedBy:14, cat:"comida",  emoji:"🍽️", voz:"almorzar" },
   { id:"cena",      name:"Cena",                     expectedBy:21, cat:"comida",  emoji:"🌙", voz:"cenar" },
   { id:"med_n",     name:"Pastilla de la noche",     expectedBy:21, cat:"medico",  emoji:"💊", voz:"tomar la pastilla de la noche" },
@@ -399,9 +399,13 @@ function speak(text) {
   window.speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text);
   u.lang  = "es-ES";
-  u.rate  = 0.82;
-  u.pitch = 1.05;
-  window.speechSynthesis.speak(u);
+u.rate  = 0.82;
+u.pitch = 1.1;
+const voices = window.speechSynthesis.getVoices();
+const voz = voices.find(v => v.lang.startsWith("es") &&
+  (v.name.includes("Mónica") || v.name.includes("Monica") ||
+   v.name.includes("Paulina") || v.name.includes("Luciana")));
+if (voz) u.voice = voz;
 }
 
 window.speakStatus = () => {
