@@ -1,8 +1,9 @@
 {
-  "name": "Mi Día",
+  "name": "Mi Día Mis Hijas",
   "short_name": "Mi Día",
   "description": "Rutinas diarias y acompañamiento",
-  "start_url": "/",
+  "start_url": "/Pacho-project-/",
+  "scope": "/Pacho-project-/",
   "display": "standalone",
   "background_color": "#F8FAFC",
   "theme_color": "#0EA5E9",
